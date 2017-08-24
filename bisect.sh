@@ -34,6 +34,8 @@ VER=`./perl -e'print substr ($^V, 1)'`
 ln -s perl${VER} $BASE_DIR/bin/perl
 # This runs the actual testcase. You could use -e instead:
 
+set +e
+
 # testing a simple test case
 #echo '#127568: \w'
 #$BASE_DIR/bin/perl -e 'my $f = $ENV{user} =~ qr{_?[\W\_]}; print qx{egrep "VmRSS|VmPeak" /proc/$$/status}'
@@ -42,9 +44,11 @@ ln -s perl${VER} $BASE_DIR/bin/perl
 #echo '#127392: constant only'
 #$BASE_DIR/bin/perl -e 'use constant; print qx{egrep "VmRSS|VmPeak" /proc/$$/status}'
 
-$BASE_DIR/bin/perl -E 'say qq{## Perl $] installed}'
+$BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
 
+# ... TODO install and test BC
 
+git checkout .
 
 #if you need to invert the exit code, replace the above exit with this:
 #[ $ret -eq 0 ] && exit 1
