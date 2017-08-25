@@ -1,11 +1,12 @@
 #!/bin/sh
 
-git proper
+git checkout .
+git clean -dxf
 
 set -e
 
 BASE_DIR=/root/perlbin_tmp
-PATCH_DIR=/root/bc/minimal-patches/
+PATCH_DIR=/root/bc/minimal-patches
 LOG=/tmp/log.bc.configure.bisect
 
 cd ~/workspace/perl5/
@@ -39,16 +40,21 @@ test -f config.sh || exit 125
 
 echo "..."
 echo "Running: make -j18 install"
-make -j18 install >$LOG 2>&1 || ( cat $LOG; exit $? ) 
+make -j18 install >$LOG 2>&1 || ( cat $LOG; exit $? )
 echo "[DONE] compiled perl"
 
 [ -x ./perl ] || exit 125
 git checkout makedepend.SH
 VER=`./perl -e'print substr ($^V, 1)'`
 ln -s perl${VER} $BASE_DIR/bin/perl
-# This runs the actual testcase. You could use -e instead:
 
-set +e
+git checkout .
+
+##### Settign & checking perl
+export PATH=/root/perlbin_tmp/bin:$PATH
+$BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
+
+###### FROM HERE can test & use perl
 
 # testing a simple test case
 #echo '#127568: \w'
@@ -58,25 +64,17 @@ set +e
 #echo '#127392: constant only'
 #$BASE_DIR/bin/perl -e 'use constant; print qx{egrep "VmRSS|VmPeak" /proc/$$/status}'
 
-$BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
-
-# ... TODO install and test BC
-
-git checkout .
-
-export PATH=/root/perlbin_tmp/bin:$PATH
-
-# adding B::Flags
+###### INSTALLING a few modules required by B::C
 
 for module in "B-Flags-0.17" "Template-Toolkit-2.27"; do 
 	echo "# installing $module"; 
-	set -e
 	cd /root/bc/$module
 	git clean -dxf
 	echo | perl Makefile.PL
 	make install
-	set +e
 done
+
+###### INSTALLING B::C
 
 cd /root/workspace/bc
 
@@ -91,6 +89,18 @@ which perlcc
 echo "# testing B::C"
 rm -f a.out*; /root/perlbin_tmp/bin/perlcc -r -e 'print qq{## Hello from perlcc $] - use $^X - OK\n}'
 
+
+############################################
+#### our B::C test to bisect there
+############################################
+
+set +e
+
+# v5.25.0 OK
+
+cd t/testsuite/t
+rm -f op/array op/array.c
+/root/perlbin_tmp/bin/perlcc -r op/array.t
 
 #if you need to invert the exit code, replace the above exit with this:
 #[ $ret -eq 0 ] && exit 1
