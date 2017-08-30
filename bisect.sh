@@ -27,7 +27,7 @@ echo "[DONE] patching perl";
 
 echo "..."
 echo "Running ./Configure"
-./Configure -Dprefix=$BASE_DIR -Dusedevel -Doptimize=-g -des -Dinstallusrbinperl=no -Dscriptdir=$BASE_DIR/bin -Dscriptdirexp=$BASE_DIR/bin -Dman1dir=none -Dman3dir=none >$LOG 2>&1 || ( cat $LOG; exit $? ) 
+./Configure -Dprefix=$BASE_DIR -Dusedevel -Doptimize=-g3 -des -Dinstallusrbinperl=no -Dscriptdir=$BASE_DIR/bin -Dscriptdirexp=$BASE_DIR/bin -Dman1dir=none -Dman3dir=none >$LOG 2>&1 || ( cat $LOG; exit $? ) 
 
 echo "[DONE] ./Configure";
 test -f config.sh || exit 125
@@ -66,9 +66,9 @@ $BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
 
 ###### INSTALLING a few modules required by B::C
 
-for module in "B-Flags-0.17" "Template-Toolkit-2.27"; do 
+for module in "B-Flags-0.17" "Template-Toolkit-2.27" "Scalar-List-Utils-1.48"; do 
 	echo "# installing $module"; 
-	cd /root/bc/$module
+	cd /root/bc/modules/$module
 	git clean -dxf
 	echo | perl Makefile.PL
 	make install
@@ -98,9 +98,20 @@ set +e
 
 # v5.25.0 OK
 
-cd t/testsuite/t
-rm -f op/array op/array.c
-/root/perlbin_tmp/bin/perlcc -r op/array.t
+#cd t/testsuite/t
+#rm -f op/array op/array.c
+#/root/perlbin_tmp/bin/perlcc -r op/array.t
+
+#rm -f a.out*; which perl; which perlcc; /root/perlbin_tmp/bin/perl -e 'print "$]\n"'; /root/perlbin_tmp/bin/perlcc -r -e 'print "$]\n"'
+
+rm -f a.out* test test.c; which perl; which perlcc; 
+
+echo "# uncompiled version"
+/root/perlbin_tmp/bin/perl test.pl 
+echo " "
+echo "# compiled version"
+/root/perlbin_tmp/bin/perlcc -r test.pl
+
 
 #if you need to invert the exit code, replace the above exit with this:
 #[ $ret -eq 0 ] && exit 1
