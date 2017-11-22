@@ -67,6 +67,22 @@ $BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
 
 ###### INSTALLING a few modules required by B::C
 
+# install cpanminus
+for module in "Scalar-List-Utils-1.48" "App-cpanminus-1.7043"; do 
+ 	echo "# installing $module"; 
+ 	cd /root/bc/modules/$module
+ 	git clean -dxf
+ 	echo | perl Makefile.PL
+ 	make install
+done
+
+# install all dependencies of App::perlbrew
+for module in "Path::Class" "App::perlbrew"; do
+	echo "# installing module $module using cpanm";
+	/root/perlbin_tmp/bin/cpanm --notest $module
+done
+
+# run test for App::perlbrew
 for module in "App-perlbrew-0.80"; do 
 	echo "# installing $module"; 
 	cd /root/bc/modules/$module
@@ -75,10 +91,3 @@ for module in "App-perlbrew-0.80"; do
 	make test
 done
 
-# for module in "B-Flags-0.17" "Template-Toolkit-2.27" "Scalar-List-Utils-1.48"; do 
-# 	echo "# installing $module"; 
-# 	cd /root/bc/modules/$module
-# 	git clean -dxf
-# 	echo | perl Makefile.PL
-# 	make install
-# done
