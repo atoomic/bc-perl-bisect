@@ -16,18 +16,19 @@ git clean -dxf >/dev/null 2>&1
 /bin/rm -rf $BASE_DIR ||:
 
 echo "..."
-echo "# patching files"
-for p in $PATCH_DIR/*.patch; do
-    echo "## Applying patch $p"
-    patch -p3 -i $p
-done
+# echo "# patching files"
+# for p in $PATCH_DIR/*.patch; do
+#     echo "## Applying patch $p"
+#     patch -p3 -i $p
+# done
 
-echo "[DONE] patching perl";
+# echo "[DONE] patching perl";
 
 
 echo "..."
 echo "Running ./Configure"
-./Configure -Dprefix=$BASE_DIR -Dusedevel -Doptimize=-g3 -des -Dinstallusrbinperl=no -Dscriptdir=$BASE_DIR/bin -Dscriptdirexp=$BASE_DIR/bin -Dman1dir=none -Dman3dir=none >$LOG 2>&1 || ( cat $LOG; exit $? ) 
+export TEST_JOBS=10
+./Configure -Dprefix=$BASE_DIR -Dcc="ccache gcc" -Dusedevel -Doptimize=-g3 -des -Dinstallusrbinperl=no -Dscriptdir=$BASE_DIR/bin -Dscriptdirexp=$BASE_DIR/bin -Dman1dir=none -Dman3dir=none >$LOG 2>&1 || ( cat $LOG; exit $? ) 
 
 echo "[DONE] ./Configure";
 test -f config.sh || exit 125
@@ -66,53 +67,18 @@ $BASE_DIR/bin/perl -E 'say qq{## Perl $] installed - use $^X}'
 
 ###### INSTALLING a few modules required by B::C
 
-for module in "B-Flags-0.17" "Template-Toolkit-2.27" "Scalar-List-Utils-1.48"; do 
+for module in "App-perlbrew-0.80"; do 
 	echo "# installing $module"; 
 	cd /root/bc/modules/$module
 	git clean -dxf
 	echo | perl Makefile.PL
-	make install
+	make test
 done
 
-###### INSTALLING B::C
-
-cd /root/workspace/bc
-
-perl Makefile.PL >$LOG 2>&1 || ( cat $LOG; exit $? ) #  installdirs=vendor
-echo "B::C - Makefile.PL: ok"
-
-make -j4 install >>$LOG 2>&1 || ( cat $LOG; exit $? )
-
-echo "# which perlcc ?"
-which perlcc
-
-echo "# testing B::C"
-rm -f a.out*; /root/perlbin_tmp/bin/perlcc -r -e 'print qq{## Hello from perlcc $] - use $^X - OK\n}'
-
-
-############################################
-#### our B::C test to bisect there
-############################################
-
-set +e
-
-# v5.25.0 OK
-
-#cd t/testsuite/t
-#rm -f op/array op/array.c
-#/root/perlbin_tmp/bin/perlcc -r op/array.t
-
-#rm -f a.out*; which perl; which perlcc; /root/perlbin_tmp/bin/perl -e 'print "$]\n"'; /root/perlbin_tmp/bin/perlcc -r -e 'print "$]\n"'
-
-rm -f a.out* test test.c; which perl; which perlcc; 
-
-echo "# uncompiled version"
-/root/perlbin_tmp/bin/perl test.pl 
-echo " "
-echo "# compiled version"
-/root/perlbin_tmp/bin/perlcc -r test.pl
-
-
-#if you need to invert the exit code, replace the above exit with this:
-#[ $ret -eq 0 ] && exit 1
-#exit 0
+# for module in "B-Flags-0.17" "Template-Toolkit-2.27" "Scalar-List-Utils-1.48"; do 
+# 	echo "# installing $module"; 
+# 	cd /root/bc/modules/$module
+# 	git clean -dxf
+# 	echo | perl Makefile.PL
+# 	make install
+# done
